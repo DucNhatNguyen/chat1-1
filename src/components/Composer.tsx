@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Paperclip, Smile, SendHorizontal, AtSign } from "lucide-react";
+import clsx from "clsx";
 
 type Props = {
   onSend: (text: string) => void;
+  className?: string; // Thêm className
 };
 
-export function Composer({ onSend }: Props) {
+export function Composer({ onSend, className }: Props) {
   const [value, setValue] = useState("");
 
   function handleSend() {
@@ -22,7 +24,7 @@ export function Composer({ onSend }: Props) {
   }
 
   return (
-    <div className="border-t border-neutral-200 bg-white p-3">
+    <div className={clsx("border-t border-neutral-200 bg-white p-3", className)}>
       <div className="border border-neutral-200 rounded-xl bg-white focus-within:ring-2 focus-within:ring-brand-300">
         <div className="px-2 py-1 flex items-center gap-1 text-neutral-500">
           <button className="h-8 w-8 grid place-items-center hover:text-neutral-700" title="Mention">

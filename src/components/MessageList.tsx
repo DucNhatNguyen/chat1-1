@@ -1,8 +1,8 @@
 import type { Message, User } from "@/types";
 import { parseISO, format } from "date-fns";
 import clsx from "clsx";
-import { Copy, Undo2, MoreHorizontal } from "lucide-react";
-import { useState } from "react";
+import { Copy, Undo2, MoreHorizontal, Smile } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 
 type Props = {
   messages: Message[];
@@ -34,7 +34,27 @@ export function MessageList({
   onRecall,
 }: Props) {
   const userMap = new Map(users.map((u) => [u.id, u]));
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [openAction, setOpenAction] = useState<{
+    id: string;
+    type: "emoji" | "more";
+  } | null>(null);
+
+  // Delay ẩn giống Zalo - sửa thành 1500ms cho thực tế hơn
+  const HIDE_DELAY_MS = 1500;
+  const hideTimerRef = useRef<number | null>(null);
+  const clearCloseTimer = () => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  };
+  const scheduleClose = () => {
+    clearCloseTimer();
+    hideTimerRef.current = window.setTimeout(() => {
+      setOpenAction(null);
+    }, HIDE_DELAY_MS);
+  };
+  useEffect(() => () => clearCloseTimer(), []);
 
   async function copyToClipboard(text: string) {
     try {
@@ -51,8 +71,8 @@ export function MessageList({
 
   return (
     <div
-      className="h-full overflow-y-auto px-4 py-3 space-y-2 bg-neutral-50"
-      onClick={() => setOpenMenuId(null)}
+      className="h-full min-h-0 overflow-y-auto px-4 py-3 space-y-2 bg-neutral-50"
+      onClick={() => setOpenAction(null)}
     >
       {messages.map((m, idx) => {
         const u = userMap.get(m.userId)!;
@@ -70,23 +90,20 @@ export function MessageList({
         return (
           <div
             key={m.id}
+            id={m.id}
             className={clsx("group flex gap-2", isMine && "justify-end")}
           >
             {!isMine && (
               <div className="mt-5">
-                {showHeader ? (
-                  <Avatar user={u} />
-                ) : (
-                  <div className="w-[28px]" />
-                )}
+                {showHeader ? <Avatar user={u} /> : <div className="w-[28px]" />}
               </div>
             )}
 
-            <div className={clsx("max-w-[72%] relative")}>
+            <div className="relative max-w-[72%]">
               {showHeader && (
                 <div
                   className={clsx(
-                    "text-xs mb-1",
+                    "mb-1 text-xs",
                     isMine ? "text-right" : "text-left"
                   )}
                 >
@@ -97,136 +114,206 @@ export function MessageList({
                 </div>
               )}
 
-              <div
-                className={clsx(
-                  "px-3 py-2 rounded-2xl whitespace-pre-wrap relative",
-                  isMine
-                    ? "bg-brand text-white rounded-br-sm"
-                    : "bg-white border border-neutral-200 text-neutral-900 rounded-bl-sm",
-                  m.recalled && "opacity-70"
-                )}
-              >
-                {m.recalled ? (
-                  <span className="italic text-neutral-200 md:text-neutral-400">
-                    Tin nhắn đã được thu hồi
-                  </span>
-                ) : (
-                  m.text
-                )}
-
-                {!m.recalled && (
-                  <>
-                    {
-                      /* Kebab trigger */
-                      // Moved to bottom edge for better ergonomics
-                    }
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenMenuId((prev) => (prev === m.id ? null : m.id));
-                      }}
-                      className={clsx(
-                        "absolute -bottom-2 h-7 w-7 grid place-items-center rounded-full",
-                        isMine ? "right-1" : "left-1",
-                        "bg-white/80 border border-neutral-200 text-neutral-600 shadow-sm",
-                        "opacity-0 group-hover:opacity-100 transition",
-                        openMenuId === m.id && "opacity-100"
-                      )}
-                      title="Tác vụ"
-                      aria-label="Mở danh sách tác vụ"
-                    >
-                      <MoreHorizontal size={16} />
-                    </button>
-
-                    {/* Dropdown menu */}
-                    {openMenuId === m.id && (
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className={clsx(
-                          "absolute z-20 w-52 rounded-lg border border-neutral-200 bg-white shadow-md",
-                          isMine
-                            ? "right-1 top-full mt-1.5"
-                            : "left-1 top-full mt-1.5"
-                        )}
-                        role="menu"
-                      >
-                        <div className="px-2 py-1.5">
-                          <div className="text-xs text-neutral-500 mb-1">
-                            Thả cảm xúc
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            {EMOJIS.map((e) => (
-                              <button
-                                key={e}
-                                onClick={() => { onToggleReaction(m.id, e); setOpenMenuId(null); }}
-                                className="h-7 w-7 grid place-items-center rounded-full hover:bg-neutral-100 transition"
-                                title={`Thả ${e}`}
-                                aria-label={`Thả cảm xúc ${e}`}
-                              >
-                                <span className="text-base leading-none">
-                                  {e}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="h-px bg-neutral-200" />
-                        <button
-                          onClick={() => { copyToClipboard(m.text); setOpenMenuId(null); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-                          role="menuitem"
-                          disabled={m.recalled}
-                        >
-                          <Copy size={14} className="text-neutral-600" />
-                          Sao chép tin nhắn
-                        </button>
-                        {isMine && !m.recalled && (
-                          <button
-                            onClick={() => { onRecall(m.id); setOpenMenuId(null); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                            role="menuitem"
-                          >
-                            <Undo2 size={14} />
-                            Thu hồi tin nhắn
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-
-              {hasReactions && (
+              <div className="flex items-end">
                 <div
                   className={clsx(
-                    "mt-1 flex flex-wrap gap-1",
-                    isMine ? "justify-end" : "justify-start"
+                    "relative whitespace-pre-wrap rounded-2xl px-3 py-2",
+                    isMine
+                      ? "bg-brand text-white rounded-br-sm"
+                      : "rounded-bl-sm border border-neutral-200 bg-white text-neutral-900",
+                    m.recalled && "opacity-70"
                   )}
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  {Object.entries(m.reactions || {}).map(([emoji, ids]) => {
-                    const mine = ids.includes(currentUserId);
-                    return (
-                      <button
-                        key={emoji}
-                        onClick={() => onToggleReaction(m.id, emoji)}
-                        className={clsx(
-                          "text-xs px-1.5 py-0.5 rounded-full border",
-                          mine
-                            ? "bg-brand/10 border-brand/30 text-brand-700"
-                            : "bg-neutral-100 border-neutral-200 text-neutral-700"
-                        )}
-                        title={mine ? "Bỏ cảm xúc" : "Thả cảm xúc"}
-                      >
-                        <span className="mr-1">{emoji}</span>
-                        <span>{ids.length}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                  {m.recalled ? (
+                    <span className="italic text-neutral-400">
+                      Tin nhắn đã được thu hồi
+                    </span>
+                  ) : (
+                    m.text
+                  )}
 
-            {isMine && <div className="w-[28px]" />}
+                  {/* Reaction pill bám mép bong bóng */}
+                  {!m.recalled && hasReactions && (
+                    <div
+                      className={clsx(
+                        "absolute -bottom-3 inline-flex items-center gap-1 rounded-full border bg-white px-1.5 py-0.5 text-neutral-700 shadow-sm",
+                        isMine ? "right-2" : "left-2"
+                      )}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {Object.entries(m.reactions || {}).map(([emoji, ids]) => {
+                        const mine = ids.includes(currentUserId);
+                        return (
+                          <button
+                            key={emoji}
+                            onClick={() => onToggleReaction(m.id, emoji)}
+                            className={clsx(
+                              "rounded-full px-1 py-0.5 text-xs leading-none",
+                              mine
+                                ? "bg-brand/10 text-brand-700"
+                                : "hover:bg-neutral-50"
+                            )}
+                            title={mine ? "Bỏ cảm xúc" : "Thả cảm xúc"}
+                          >
+                            <span className="mr-1">{emoji}</span>
+                            <span>{ids.length}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Cụm nút tròn nổi cạnh bong bóng */}
+                  {!m.recalled && (
+                    <div
+                      className={clsx(
+                        "absolute top-1/2 -translate-y-1/2 z-10",
+                        isMine
+                          ? "left-0 -translate-x-full pr-2"
+                          : "right-0 translate-x-full pl-2"
+                      )}
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseEnter={clearCloseTimer}
+                      onMouseLeave={scheduleClose}
+                    >
+                      {/* Hàng nút */}
+                      <div
+                        className={clsx(
+                          "flex items-center gap-1",
+                          openAction?.id === m.id && openAction?.type === "emoji"
+                            ? "opacity-0 pointer-events-none"
+                            : "opacity-100",
+                          openAction?.id === m.id && openAction?.type === "more"
+                            ? "flex"
+                            : "hidden group-hover:flex"
+                        )}
+                      >
+                        {/* Emoji */}
+                        <button
+                          onClick={() =>
+                            setOpenAction((prev) =>
+                              prev?.id === m.id && prev?.type === "emoji"
+                                ? null
+                                : { id: m.id, type: "emoji" }
+                            )
+                          }
+                          className={clsx(
+                            "grid h-8 w-8 place-items-center rounded-full",
+                            "border border-neutral-200 bg-white/80 text-neutral-600 shadow-sm backdrop-blur",
+                            "transition hover:bg-white hover:text-neutral-800 active:scale-95"
+                          )}
+                          title="Thả cảm xúc"
+                        >
+                          <Smile size={16} />
+                        </button>
+                        {/* Copy */}
+                        <button
+                          onClick={() => copyToClipboard(m.text)}
+                          className={clsx(
+                            "grid h-8 w-8 place-items-center rounded-full",
+                            "border border-neutral-200 bg-white/80 text-neutral-600 shadow-sm backdrop-blur",
+                            "transition hover:bg-white hover:text-neutral-800 active:scale-95"
+                          )}
+                          title="Sao chép"
+                        >
+                          <Copy size={16} />
+                        </button>
+                        {/* More */}
+                        <button
+                          onClick={() =>
+                            setOpenAction((prev) =>
+                              prev?.id === m.id && prev?.type === "more"
+                                ? null
+                                : { id: m.id, type: "more" }
+                            )
+                          }
+                          className={clsx(
+                            "grid h-8 w-8 place-items-center rounded-full",
+                            "border border-neutral-200 bg-white/80 text-neutral-600 shadow-sm backdrop-blur",
+                            "transition hover:bg-white hover:text-neutral-800 active:scale-95",
+                            openAction?.id === m.id && openAction?.type === "more" && "bg-neutral-100"
+                          )}
+                          title="Tác vụ khác"
+                        >
+                          <MoreHorizontal size={16} />
+                        </button>
+                      </div>
+
+                      {/* Popover Emoji */}
+                      {openAction?.id === m.id && openAction?.type === "emoji" && (
+                        <div
+                          className={clsx(
+                            "absolute bottom-full mb-2 z-50 flex gap-1 rounded-full border bg-white px-1.5 py-1 shadow",
+                            isMine ? "left-0" : "right-0"
+                          )}
+                          role="menu"
+                          onMouseEnter={clearCloseTimer}
+                          onMouseLeave={scheduleClose}
+                        >
+                          {EMOJIS.map((e) => (
+                            <button
+                              key={e}
+                              onClick={() => {
+                                onToggleReaction(m.id, e);
+                                setOpenAction(null);
+                              }}
+                              className="grid h-7 w-7 place-items-center rounded-full transition hover:bg-neutral-100"
+                              title={`Thả ${e}`}
+                            >
+                              <span className="text-base leading-none">{e}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Dropdown More - Sửa thành absolute để định vị đơn giản */}
+                      {openAction?.id === m.id && openAction?.type === "more" && (
+                        <div
+                          className={clsx(
+                            "absolute z-50 w-52 rounded-lg border border-neutral-200 bg-white shadow-md",
+                            // Thay vì fixed phức tạp, dùng absolute với vị trí cố định
+                            isMine ? "right-full mr-2 top-0" : "left-full ml-2 top-0"
+                          )}
+                          role="menu"
+                          onMouseEnter={clearCloseTimer}
+                          onMouseLeave={scheduleClose}
+                        >
+                          <button
+                            onClick={() => {
+                              copyToClipboard(m.text);
+                              setOpenAction(null);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+                            role="menuitem"
+                            disabled={m.recalled}
+                          >
+                            <Copy size={14} className="text-neutral-600" />
+                            Sao chép tin nhắn
+                          </button>
+                          {isMine && !m.recalled && (
+                            <button
+                              onClick={() => {
+                                onRecall(m.id);
+                                setOpenAction(null);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                              role="menuitem"
+                            >
+                              <Undo2 size={14} />
+                              Thu hồi tin nhắn
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {/* Kết thúc bong bóng */}
+
+                {isMine && <div className="w-[28px]" />}
+              </div>
+            </div>
           </div>
         );
       })}

@@ -1,15 +1,17 @@
 import { Info, PanelRightOpen, PanelRightClose, Search } from "lucide-react";
+import clsx from "clsx";
 
 type Props = {
   title: string;
   subtitle?: string;
   rightOpen: boolean;
   onToggleRight: () => void;
+  className?: string; // Thêm className
 };
 
-export function ChatHeader({ title, subtitle, rightOpen, onToggleRight }: Props) {
+export function ChatHeader({ title, subtitle, rightOpen, onToggleRight, className }: Props) {
   return (
-    <header className="h-14 border-b border-neutral-200 bg-white px-4 flex items-center gap-3">
+    <header className={clsx("h-14 border-b border-neutral-200 bg-white px-4 flex items-center gap-3", className)}>
       <div className="flex-1 min-w-0">
         <div className="font-semibold truncate">{title}</div>
         <div className="text-xs text-neutral-500 truncate">{subtitle}</div>

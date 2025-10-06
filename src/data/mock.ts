@@ -18,7 +18,13 @@ export const rooms: Room[] = [
 
 export const messages: Message[] = [
   { id: "m1", roomId: "r1", userId: "u1", text: "Morning! Standup at 9:30.", createdAt: formatISO(subHours(now, 2)) },
-  { id: "m2", roomId: "r1", userId: "me", text: "On it. I’ll share updates.", createdAt: formatISO(subHours(now, 1.8)) },
+  ...Array.from({ length: 47 }, (_, i) => ({
+    id: `m2-${i + 1}`,
+    roomId: "r1",
+    userId: "me",
+    text: `On it. I'll share updates. #${i + 1}`,
+    createdAt: formatISO(subHours(now, 1.8 - i * 0.02)),
+  })),
   { id: "m3", roomId: "r1", userId: "u2", text: "Pushed API changes to staging.", createdAt: formatISO(subMinutes(now, 35)) },
   { id: "m4", roomId: "r2", userId: "u3", text: "New Figma link posted.", createdAt: formatISO(subHours(now, 2.2)) },
   { id: "m5", roomId: "r3", userId: "u2", text: "Can we sync later today?", createdAt: formatISO(subDays(now, 1)) },

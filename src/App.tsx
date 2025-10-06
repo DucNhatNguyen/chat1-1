@@ -9,10 +9,13 @@ import { MessageList } from "./components/MessageList";
 import { Composer } from "./components/Composer";
 import { RightPanel } from "./components/RightPanel";
 import { NewChatModal } from "./components/NewChatModal";
+import { buildManyMessages } from "./data/manyMessages";
 
 function nextId() {
   return Math.random().toString(36).slice(2, 10);
 }
+
+const MANY_ROOM_ID = "room-mock-many";
 
 export default function App() {
   const [users, setUsers] = useState<User[]>(mockUsers);
@@ -187,7 +190,7 @@ export default function App() {
           />
         </aside>
 
-        <main className="flex flex-col">
+        <main className="flex flex-col h-full overflow-hidden">
           {selectedRoom && (
             <>
               <ChatHeader
@@ -195,8 +198,9 @@ export default function App() {
                 subtitle={formatHeaderSubtitle(selectedRoom.lastMessageAt)}
                 onToggleRight={() => setShowRight(s => !s)}
                 rightOpen={showRight}
+                className="flex-shrink-0"
               />
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 min-h-0 overflow-hidden">
                 <MessageList
                   messages={roomMessages}
                   users={users}
@@ -205,7 +209,7 @@ export default function App() {
                   onRecall={recallMessage}
                 />
               </div>
-              <Composer onSend={sendMessage} />
+              <Composer onSend={sendMessage} className="flex-shrink-0" />
             </>
           )}
         </main>
