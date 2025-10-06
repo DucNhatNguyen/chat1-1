@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* App-specific utilities */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
