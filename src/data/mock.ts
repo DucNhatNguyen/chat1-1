@@ -28,6 +28,69 @@ export const messages: Message[] = [
   { id: "m3", roomId: "r1", userId: "u2", text: "Pushed API changes to staging.", createdAt: formatISO(subMinutes(now, 35)) },
   { id: "m4", roomId: "r2", userId: "u3", text: "New Figma link posted.", createdAt: formatISO(subHours(now, 2.2)) },
   { id: "m5", roomId: "r3", userId: "u2", text: "Can we sync later today?", createdAt: formatISO(subDays(now, 1)) },
+  // Mẫu media/image
+  {
+    id: "m-img-1",
+    roomId: "r1",
+    userId: "me",
+    text: "Ảnh demo",
+    attachments: [
+      {
+        id: "att-img-1",
+        type: "image",
+        url: "https://picsum.photos/id/237/800/600",
+        name: "dog.jpg",
+        size: 1200345,
+        mimeType: "image/jpeg",
+        width: 800,
+        height: 600,
+      },
+    ],
+    createdAt: formatISO(subMinutes(now, 25)),
+    reactions: {},
+    recalled: false,
+  },
+  // Mẫu video
+  {
+    id: "m-vid-1",
+    roomId: "r1",
+    userId: "u2",
+    text: "",
+    attachments: [
+      {
+        id: "att-vid-1",
+        type: "video",
+        url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+        name: "flower.mp4",
+        size: 5_200_000,
+        mimeType: "video/mp4",
+        duration: 30,
+      },
+    ],
+    createdAt: formatISO(subMinutes(now, 20)),
+    reactions: {},
+    recalled: false,
+  },
+  // Mẫu file
+  {
+    id: "m-file-1",
+    roomId: "r1",
+    userId: "me",
+    text: "File tài liệu",
+    attachments: [
+      {
+        id: "att-file-1",
+        type: "file",
+        url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        name: "ProjectPlan.pdf",
+        size: 210_340,
+        mimeType: "application/pdf",
+      },
+    ],
+    createdAt: formatISO(subMinutes(now, 18)),
+    reactions: {},
+    recalled: false,
+  },
 ];
 
 export const currentUserId = "me";

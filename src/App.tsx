@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { rooms as mockRooms, users as mockUsers, messages as mockMessages, currentUserId } from "./data/mock";
-import type { ID, Message, Room, User } from "./types";
+import type { Attachment, ID, Message } from "./types";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
 import { Sidebar } from "./components/Sidebar";
 import { RoomList } from "./components/RoomList";
@@ -9,7 +9,6 @@ import { MessageList } from "./components/MessageList";
 import { Composer } from "./components/Composer";
 import { RightPanel } from "./components/RightPanel";
 import { NewChatModal } from "./components/NewChatModal";
-import { buildManyMessages } from "./data/manyMessages";
 
 function nextId() {
   return Math.random().toString(36).slice(2, 10);
@@ -45,22 +44,39 @@ export default function App() {
       .sort((a, b) => parseISO(a.createdAt).getTime() - parseISO(b.createdAt).getTime());
   }, [messages, selectedRoomId]);
 
-  function sendMessage(text: string) {
-    if (!text.trim() || !selectedRoom) return;
+  function sendMessage(text: string, files: File[]) {
+    if (!selectedRoomId) return;
+
+    const attachments: Attachment[] = (files || []).map((f, i) => {
+      const isImg = f.type.startsWith("image/");
+      const isVid = f.type.startsWith("video/");
+      return {
+        id: `${nextId()}-${i}`,
+        type: isImg ? "image" : isVid ? "video" : "file",
+        url: URL.createObjectURL(f),
+        name: f.name,
+        size: f.size,
+        mimeType: f.type,
+      };
+    });
+
+    if (!text.trim() && attachments.length === 0) return;
+
     const newMsg: Message = {
       id: nextId(),
-      roomId: selectedRoom.id,
+      roomId: selectedRoomId,
       userId: currentUserId,
       text: text.trim(),
+      attachments: attachments.length ? attachments : undefined,
       createdAt: new Date().toISOString(),
       reactions: {},
       recalled: false,
     };
-    setMessages(prev => [...prev, newMsg]);
 
-    setRooms(prev =>
-      prev.map(r =>
-        r.id === selectedRoom.id ? { ...r, lastMessageAt: newMsg.createdAt, unreadCount: 0 } : r
+    setMessages((prev) => [...prev, newMsg]);
+    setRooms((prev) =>
+      prev.map((r) =>
+        r.id === selectedRoomId ? { ...r, lastMessageAt: newMsg.createdAt, unreadCount: 0 } : r
       )
     );
   }
@@ -209,7 +225,10 @@ export default function App() {
                   onRecall={recallMessage}
                 />
               </div>
-              <Composer onSend={sendMessage} className="flex-shrink-0" />
+              <Composer
+                onSend={sendMessage}
+                className="flex-shrink-0"
+              />
             </>
           )}
         </main>
